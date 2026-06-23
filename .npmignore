@@ -1,6 +1,8 @@
 node_modules
 public
 src
+.gitignore
+.npmignore
 babel.config.js
 eslint.config.js
 stylelint.config.js
