@@ -1,0 +1,8 @@
+node_modules
+public
+src
+babel.config.js
+eslint.config.js
+stylelint.config.js
+tsconfig.json
+webpack.config.js

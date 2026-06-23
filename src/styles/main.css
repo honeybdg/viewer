@@ -1,0 +1,101 @@
+.viewer-toolbar {
+  box-sizing: border-box;
+  background-color: #313538;
+  color: #f9fbfb;
+  fill: #f9fbfb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 3.5em;
+  padding: .8em;
+  border-radius: .5em;
+  margin-bottom: .8em;
+}
+
+.viewer-toolbar div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.viewer-toolbar div > *:not(:last-child) {
+  margin: 0 .5em 0 0;
+}
+
+.viewer-toolbar div .viewer-span-total-file {
+  margin: 0 .5em;
+}
+
+.viewer-toolbar button {
+  font-size: 1em;
+  width: 2em;
+  height: 2em;
+  padding: .375em;
+  border-radius: 50%;
+  background: none;
+  border: none;
+  transition: all .2s;
+}
+
+.viewer-toolbar input {
+  all: unset;
+  box-sizing: border-box;
+  text-align: center;
+  background: #191a1c;
+  padding: .3em .5em;
+  height: 1.5em;
+}
+
+.viewer-toolbar button:hover {
+  background: #646769;
+  cursor: pointer;
+}
+
+.viewer-toolbar button:active {
+  background: #4f5153;
+  cursor: pointer;
+}
+
+.viewer-content {
+  position: relative;
+  height: 0;
+  padding-bottom: 100%;
+}
+
+.viewer-content div {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.viewer-content div:focus-visible {
+  outline: none;
+}
+
+.viewer-content .viewer-file-wrapper {
+  width: 100%;
+  height: 100%;
+}
+
+.viewer-content img {
+  transition: all .2s;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.viewer-loader {
+  display: block;
+  width: 3em;
+  height: 3em;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

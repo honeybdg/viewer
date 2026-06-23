@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Viewer</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <div id="pure"></div>
+  </body>
+  <script>    
+    const viewer = new Viewer({
+      container: document.getElementById('pure'),
+      files: [
+        { src: 'https://avatars.githubusercontent.com/u/82649037?v=4' }
+      ],
+      nocache: true,
+      onChangeFile: console.log,
+      onRotate: console.log,
+      onRollback: console.log,
+      onClose: () => viewer.hide(),
+    });
+    viewer.show();
+  </script>
+</html>
