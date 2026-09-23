@@ -1,3 +1,8 @@
 const { stylelint } = require('@honeybdg/codestyle');
 /** @type {import('stylelint').Config} */
-module.exports = stylelint;
+module.exports = {
+  ...stylelint,
+  ignoreFiles: [
+    'dist/**',
+  ],
+};

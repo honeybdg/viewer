@@ -62,7 +62,7 @@
   padding-bottom: 100%;
 }
 
-.viewer-content div {
+.viewer-content-container {
   position: absolute;
   display: flex;
   align-items: center;
@@ -72,24 +72,40 @@
   overflow: hidden;
 }
 
-.viewer-content div:focus-visible {
+.viewer-content-container:focus-visible {
   outline: none;
 }
 
-.viewer-content .viewer-file-wrapper {
+.viewer-file-wrapper {
   width: 100%;
   height: 100%;
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
-.viewer-content img {
-  transition: all .2s;
+.viewer-content-page-pdf {
+  margin: 1em;
+  width: calc(100% - 1em);
+  flex-shrink: 0;
+  box-shadow: 0 0 6px 1px rgb(0, 0, 0, .16);
+}
+
+.viewer-content img,
+.viewer-content canvas {
   width: 100%;
   height: 100%;
   object-fit: contain;
 }
 
+.viewer-file-wrapper-rotate img,
+.viewer-file-wrapper-rotate canvas {
+  transition: all .2s;
+}
+
 .viewer-loader {
   display: block;
+  fill: #ffa500;
   width: 3em;
   height: 3em;
   animation: spin 1s linear infinite;

@@ -9,13 +9,15 @@
     <div id="root"></div>
     <div id="pure"></div>
   </body>
-  <script>    
+  <script>
     const viewer = new Viewer({
       container: document.getElementById('pure'),
       files: [
-        { src: 'https://avatars.githubusercontent.com/u/82649037?v=4' }
+        {
+          mimeType: 'image/jpeg',
+          src: 'https://avatars.githubusercontent.com/u/82649037?v=4',
+        },
       ],
-      nocache: true,
       onChangeFile: console.log,
       onRotate: console.log,
       onRollback: console.log,

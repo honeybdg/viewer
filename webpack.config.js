@@ -8,13 +8,18 @@ const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 const distDir = path.join(__dirname, 'dist');
 const publicDir = path.join(__dirname, 'public');
 
-/** @type {import('webpack').Configuration} */
+/**
+ * @param {object} env - env
+ * @param {object} argv - argv
+ * @returns {import('webpack').Configuration}
+ */
 module.exports = (env, argv) => {
   const isDevelopment = argv.mode === 'development';
 
   return {
     target: ['web', 'es5'],
     entry: [
+      ...(isDevelopment ? ['./src/dev.js'] : []),
       './src/styles/main.css',
       './src/Viewer.js',
     ],
@@ -23,13 +28,12 @@ module.exports = (env, argv) => {
       library: 'Viewer',
       libraryExport: 'default',
       filename: 'viewer.min.js',
-      clean: true,
     },
     module: {
       rules: [
         {
           test: /\.js$/,
-          exclude: /node_modules/,
+          exclude: [/node_modules/, /dist/],
           use: 'babel-loader',
         },
         {

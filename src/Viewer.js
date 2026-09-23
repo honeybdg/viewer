@@ -11,6 +11,7 @@ import rotateRightIcon from './images/rotate-right.svg';
 /**
  * Файл для просмотра
  * @typedef {object} File
+ * @property {string} mimeType - mimeType файла
  * @property {string} src - источник файла
  */
 
@@ -47,7 +48,6 @@ import rotateRightIcon from './images/rotate-right.svg';
  * @param {HTMLElement} props.container - контейнер где будет находится UI
  * @param {File[]} props.files - список файлов
  * @param {boolean=} props.closable - показать/скрыть кнопку "закрыть"
- * @param {boolean=} props.nocache - надо ли игнорировать локальный кэш браузера при запросах файлов
  * @param {OnChangeFile=} props.onChangeFile - callback при смене файла
  * @param {OnRotate=} props.onRotate - callback при повороте файла
  * @param {OnRollback=} props.onRollback - callback при сбросе
@@ -55,11 +55,10 @@ import rotateRightIcon from './images/rotate-right.svg';
  * @returns {Viewer}
  */
 export default function Viewer(props) {
-  const { container, files, closable = true, nocache = false, onChangeFile, onRotate, onRollback, onClose } = props;
+  const { container, files, closable = true, onChangeFile, onRotate, onRollback, onClose } = props;
   this.container = container;
   this.files = files;
   this.closable = closable;
-  this.nocache = nocache;
   this.onChangeFile = onChangeFile;
   this.onRotate = onRotate;
   this.onRollback = onRollback;
@@ -73,9 +72,9 @@ export default function Viewer(props) {
 
   /**
    * Дефолтные данные перемещения
-   * @type {Record<'fileX'|'fileY'|'x'|'y', number>}
+   * @type {Record<'fileX'|'fileY'|'x'|'y'|'startScrollTop', number>}
    */
-  this.defaultDragData = { fileX: 0, fileY: 0, x: 0, y: 0 };
+  this.defaultDragData = { fileX: 0, fileY: 0, x: 0, y: 0, startScrollTop: 0 };
 
   /**
    * Значения css matrix()
@@ -161,7 +160,12 @@ export default function Viewer(props) {
   /**
    * @type {HTMLImageElement}
    */
-  this.file = null;
+  this.fileImage = null;
+
+  /**
+   * @type {HTMLDivElement}
+   */
+  this.dragPagePdf = null;
 
   this.build();
 }
@@ -190,16 +194,12 @@ Viewer.prototype = {
 
   /**
    * Установить список файлов
-   * @param {{ src: string }[]} files - список файлов
+   * @param {{ src: string, mimeType: string }[]} files - список файлов
    * @returns {void}
    */
   setFiles(files) {
-    if (!files[this.fileIndex]) {
-      this.fileIndex = 0;
-    }
     this.files = files;
     this.spanTotalFile.innerHTML = this.files.length;
-    this.renderFile();
   },
 
   /**
@@ -238,11 +238,34 @@ Viewer.prototype = {
    * @returns {void}
    */
   rotate(value) {
+    // это надо чтобы он безумно не крутился при reset
+    if (this.rotation === 0 && value === 0) {
+      this.fileWrapper.classList.remove('viewer-file-wrapper-rotate');
+    } else if (!this.fileWrapper.classList.contains('viewer-file-wrapper-rotate')) {
+      this.fileWrapper.classList.add('viewer-file-wrapper-rotate');
+    }
     this.rotation += value;
-    this.file.style.transform = `rotate(${this.rotation}deg)`;
-    if (this.onRotate) {
-      const normalizedRotation = ((this.rotation % 360) + 360) % 360;
-      this.onRotate(this.fileIndex, normalizedRotation);
+
+    if (this.files[this.fileIndex].mimeType.indexOf('image/') !== -1) {
+      this.fileImage.style.transform = `rotate(${this.rotation}deg)`;
+      if (this.onRotate) {
+        const normalizedRotation = ((this.rotation % 360) + 360) % 360;
+        this.onRotate(this.fileIndex, normalizedRotation);
+      }
+    } else if (this.files[this.fileIndex].mimeType === 'application/pdf') {
+      this.fileWrapper.querySelectorAll('.viewer-content-page-pdf').forEach((page) => {
+        page.querySelector('canvas').style.transform = `rotate(${this.rotation}deg)`;
+
+        if (this.rotation === 0 && value === 0) {
+          page.style.width = null;
+          page.style.height = null;
+        } else {
+          const clientWidth = page.clientWidth;
+          const clientHeight = page.clientHeight;
+          page.style.width = clientHeight + 'px';
+          page.style.height = clientWidth + 'px';
+        }
+      });
     }
   },
 
@@ -252,16 +275,13 @@ Viewer.prototype = {
    */
   reset() {
     // чтобы файл не крутился обратно кучу раз при сбросе :)
-    this.file.style.transition = 'none';
-    this.file.style.transform = null;
     this.matrix = Array.from(this.defaultMatrix);
     this.dragData = Object.assign({}, this.defaultDragData);
     this.rotation = 0;
     this.isDragging = false;
     this.inputPercent.value = '100%';
+    this.fileImage.style.transform = null;
     this.updateMatrix();
-    // а тут возвращаем, чтобы снова плавно крутился :)
-    setTimeout(() => (this.file.style.transition = null), 100);
   },
 
   /**
@@ -271,18 +291,72 @@ Viewer.prototype = {
    */
   renderFile(index) {
     this.reset();
+    this.fileWrapper.innerHTML = '';
     this.fileIndex = this.files[index] ? index : 0;
+    this.contentContainer.style.overflow = null;
     const inputNumberValue = this.fileIndex + 1;
     this.inputNumberFile.size = String(inputNumberValue).length;
+
     if (this.files.length) {
+      this.loader.style.display = 'block';
+      this.fileWrapper.style.display = 'none';
       this.inputNumberFile.value = inputNumberValue;
-      this.file.src = this.files[this.fileIndex].src + (this.nocache ? `?_nocache=${Math.random()}` : '');
-      this.loader.style.display = null;
+      const file = this.files[this.fileIndex];
+
+      if (file.mimeType.indexOf('image/') !== -1) {
+        this.fileImage.src = file.src;
+        this.fileWrapper.appendChild(this.fileImage);
+      } else if (file.mimeType === 'application/pdf') {
+        if (!window.pdfjsLib) {
+          throw new Error('pdf.js модуль не найден (window.pdfjsLib). Возможно, он не был подключен');
+        }
+
+        const startFile = this.files[this.fileIndex];
+        this.contentContainer.style.overflowY = 'auto';
+        window.pdfjsLib.getDocument(file.src).promise.then((pdf) => {
+          /**
+           * Отрисовка страниц pdf
+           * @param {number} numPages - номер страницы
+           * @returns {void}
+           */
+          const renderPage = (numPages) => {
+            if (numPages > pdf.numPages) {
+              this.onLoad();
+              return;
+            }
+
+            pdf.getPage(numPages).then((page) => {
+              const currentFile = this.files[this.fileIndex];
+              // если во время отрисовки pdf изменились данные, то останавливаемся т.к уже не актуально
+              if (
+                startFile !== currentFile ||
+                startFile.mimeType !== currentFile.mimeType ||
+                startFile.src !== currentFile.src
+              ) { return; }
+
+              const wrapper = document.createElement('div');
+              wrapper.classList.add('viewer-content-page-pdf');
+              const canvas = document.createElement('canvas');
+              wrapper.appendChild(canvas);
+              this.fileWrapper.appendChild(wrapper);
+
+              const context = canvas.getContext('2d');
+              const viewport = page.getViewport({ scale: 2 });
+
+              canvas.height = viewport.height;
+              canvas.width = viewport.width;
+
+              page.render({ canvasContext: context, viewport: viewport }).promise.then(() => renderPage(numPages + 1));
+            });
+          };
+
+          renderPage(1);
+        });
+      }
     } else {
       this.inputNumberFile.value = 0;
       this.loader.style.display = 'none';
     }
-    this.fileWrapper.style.display = 'none';
   },
 
   /**
@@ -358,15 +432,32 @@ Viewer.prototype = {
       this.dragData.fileY = this.matrix[5];
       this.dragData.x = pageX;
       this.dragData.y = pageY;
+      this.dragData.startScrollTop = this.contentContainer.scrollTop;
       this.contentContainer.style.cursor = 'move';
 
-      /*
-        т.к изображение у нас растянуто на 100% по высоте, ширине
-        и установлено object-fit: contain; для нормального отображения
-        то рассчитывает размер сами чтобы правильно границы установить
-      */
-      const { width, height, naturalWidth, naturalHeight } = this.file;
-      const ratio = naturalWidth / naturalHeight;
+      let width;
+      let height;
+      let ratio;
+      if (this.files[this.fileIndex].mimeType.indexOf('image/') !== -1) {
+        /*
+          т.к изображение у нас растянуто на 100% по высоте, ширине
+          и установлено object-fit: contain; для нормального отображения
+          то рассчитывает размер сами чтобы правильно границы установить
+        */
+        const { naturalWidth, naturalHeight } = this.fileImage;
+        width = this.fileImage.width;
+        height = this.fileImage.height;
+        ratio = naturalWidth / naturalHeight;
+      } else if (this.files[this.fileIndex].mimeType === 'application/pdf') {
+        this.dragPagePdf = event.target.closest('.viewer-content-page-pdf') || this.dragPagePdf;
+        if (!this.dragPagePdf) { return; }
+
+        const { clientWidth, clientHeight } = this.dragPagePdf;
+        width = clientWidth;
+        height = clientHeight;
+        ratio = clientWidth / clientHeight;
+      }
+
       let size;
       if (ratio > (width / height)) {
         size = [width, width / ratio];
@@ -394,14 +485,19 @@ Viewer.prototype = {
    */
   onMouseMove(event) {
     if (!this.isDragging) { return; }
+    event.preventDefault();
 
     const { pageX, pageY } = event;
-    const { fileX, fileY, x, y } = this.dragData;
+    const { fileX, fileY, x, y, startScrollTop } = this.dragData;
 
     const moveX = fileX - (x - pageX);
     const moveY = fileY - (y - pageY);
     if (moveX <= this.bounder.x && moveX >= -this.bounder.x) { this.matrix[4] = moveX; }
-    if (moveY <= this.bounder.y && moveY >= -this.bounder.y) { this.matrix[5] = moveY; }
+    if (moveY <= this.bounder.y && moveY >= -this.bounder.y) {
+      this.matrix[5] = moveY;
+    } else if (this.files[this.fileIndex].mimeType === 'application/pdf') {
+      this.contentContainer.scrollTop = startScrollTop - (pageY - y);
+    }
 
     this.updateMatrix();
   },
@@ -541,6 +637,7 @@ Viewer.prototype = {
       const content = document.createElement('div');
       content.classList.add('viewer-content');
       this.contentContainer = document.createElement('div');
+      this.contentContainer.classList.add('viewer-content-container');
       // tabIndex нужен чтобы работало focus() и blur()
       this.contentContainer.tabIndex = -1;
       this.contentContainer.addEventListener('wheel', (e) => this.onWheel(e), { passive: false });
@@ -554,9 +651,9 @@ Viewer.prototype = {
       this.loader.innerHTML = loadingIcon;
       this.fileWrapper = document.createElement('span');
       this.fileWrapper.classList.add('viewer-file-wrapper');
-      this.file = document.createElement('img');
-      this.file.addEventListener('load', () => this.onLoad());
-      this.fileWrapper.appendChild(this.file);
+      this.fileImage = document.createElement('img');
+      this.fileImage.addEventListener('load', () => this.onLoad());
+      this.fileWrapper.appendChild(this.fileImage);
       this.contentContainer.appendChild(this.loader);
       this.contentContainer.appendChild(this.fileWrapper);
       content.appendChild(this.contentContainer);

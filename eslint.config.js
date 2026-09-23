@@ -3,6 +3,12 @@ const { eslint } = require('@honeybdg/codestyle');
 module.exports = [
   ...eslint,
   {
+    ignores: [
+      'dist/',
+      'lib/',
+    ],
+  },
+  {
     rules: {
       'react/prop-types': 'off',
     },

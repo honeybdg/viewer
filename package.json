@@ -1,10 +1,32 @@
 {
   "name": "@honeybdg/viewer",
-  "version": "1.0.0",
-  "description": "UI for viewing images",
+  "version": "1.0.1",
+  "description": "UI for viewing images and PDFs",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "unpkg": "dist/viewer.min.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./dist/*": "./dist/*",
+    "./lib/*": "./lib/*"
+  },
+  "scripts": {
+    "dev": "webpack server --mode=development",
+    "build": "npm run build:dist && npm run build:lib",
+    "build:dist": "webpack --mode=production",
+    "build:lib": "babel src --out-dir lib --delete-dir-on-start && tsc",
+    "lint": "npm run lint:eslint && npm run lint:stylelint",
+    "lint:eslint": "eslint .",
+    "lint:stylelint": "stylelint \"**/*.css\""
+  },
+  "browser": {
+    "canvas": false,
+    "fs": false,
+    "http": false,
+    "https": false,
+    "url": false,
+    "zlib": false
+  },
   "license": "MIT",
   "homepage": "https://github.com/honeybdg/viewer#readme",
   "repository": {
@@ -16,38 +38,29 @@
     "viewer",
     "react"
   ],
-  "scripts": {
-    "dev": "webpack server --mode=development",
-    "build": "npm run build:dist && npm run build:lib",
-    "build:dist": "webpack --mode=production",
-    "build:lib": "babel src --out-dir lib --delete-dir-on-start && tsc",
-    "lint": "npm run lint:eslint && npm run lint:stylelint",
-    "lint:eslint": "eslint .",
-    "lint:stylelint": "stylelint **/*.css"
-  },
   "devDependencies": {
     "@babel/cli": "^7.29.7",
     "@babel/core": "^7.29.7",
     "@babel/preset-env": "^7.29.7",
     "@babel/preset-react": "^7.29.7",
-    "@honeybdg/codestyle": "^1.0.10",
+    "@honeybdg/codestyle": "^1.0.12",
     "@types/react": "^18.3.31",
     "babel-loader": "^10.1.1",
     "babel-plugin-inline-import": "^3.0.0",
-    "css-loader": "^7.1.4",
+    "css-loader": "^7.1.5",
     "css-minimizer-webpack-plugin": "^8.0.0",
-    "html-webpack-plugin": "^5.6.7",
+    "html-webpack-plugin": "^5.6.8",
     "mini-css-extract-plugin": "^2.10.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "typescript": "^5.9.3",
-    "webpack": "^5.107.2",
-    "webpack-cli": "^7.0.3",
-    "webpack-dev-server": "^5.2.5"
+    "webpack": "^5.111.1",
+    "webpack-cli": "^7.2.3",
+    "webpack-dev-server": "^6.0.0"
   },
   "peerDependencies": {
-    "react": ">=16.8.0",
-    "react-dom": ">=16.8.0"
+    "react": "*",
+    "react-dom": "*"
   },
   "peerDependenciesMeta": {
     "react": {

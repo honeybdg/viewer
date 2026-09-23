@@ -1,8 +1,8 @@
 import React, { useRef, useEffect } from 'react';
 
-import Viewer from './Viewer';
+import Viewer from './Viewer.js';
 
-/** @import { File, OnChangeFile, OnRotate, OnRollback, OnClose } from './Viewer'; */
+/** @import { File, OnChangeFile, OnRotate, OnRollback, OnClose } from './Viewer.js'; */
 
 /**
  * @typedef {object} ViewerProps
@@ -10,7 +10,6 @@ import Viewer from './Viewer';
  * @property {boolean=} open - показать/скрыть viewer
  * @property {File[]} files - список файлов
  * @property {boolean=} closable - показать/скрыть кнопку закрытия
- * @property {boolean=} nocache - надо ли игнорировать локальный кэш браузера при запросах файлов
  * @property {OnChangeFile=} onChangeFile - callback при смене файла
  * @property {OnRotate=} onRotate - callback при повороте файла
  * @property {OnRollback=} onRollback - callback при сбросе
@@ -23,7 +22,7 @@ import Viewer from './Viewer';
  * @returns {import('react').JSX.Element}
  */
 function ViewerComponent(props) {
-  const { files, fileIndex, open, closable = true, nocache = false, onChangeFile, onRotate, onRollback, onClose, ...containerProps } = props;
+  const { files, fileIndex, open, closable = true, onChangeFile, onRotate, onRollback, onClose, ...containerProps } = props;
 
   /**
    * @type {{ current: HTMLDivElement }}
@@ -41,7 +40,6 @@ function ViewerComponent(props) {
         container: container.current,
         files,
         closable,
-        nocache,
         onChangeFile,
         onRotate,
         onRollback,
@@ -64,11 +62,10 @@ function ViewerComponent(props) {
 
   useEffect(() => {
     viewer.current.setFiles(files);
+    if (open) {
+      viewer.current.renderFile(fileIndex);
+    }
   }, [files]);
-
-  useEffect(() => {
-    viewer.current.nocache = nocache;
-  }, [nocache]);
 
   useEffect(() => {
     viewer.current.setClosable(closable);
